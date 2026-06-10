@@ -1,21 +1,578 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Resume</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mahdi Zarrin — AI Researcher · Medical Imaging</title>
+<meta name="description" content="Mahdi Zarrin — AI researcher specializing in deep learning for medical image segmentation, brain MRI analysis, and multi-modal learning.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c1417;
+  --ink-2:#111d21;
+  --paper:#f3f6f5;
+  --card:#ffffff;
+  --text:#1b2528;
+  --muted:#5d6b70;
+  --line:#dde4e3;
+  --cyan:#14b3a5;        /* published / primary segmentation class */
+  --cyan-soft:rgba(20,179,165,.12);
+  --amber:#d99a2b;       /* accepted */
+  --amber-soft:rgba(217,154,43,.13);
+  --magenta:#d34f8d;     /* under review / in preparation */
+  --magenta-soft:rgba(211,79,141,.11);
+  --grid:rgba(255,255,255,.045);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --display:'Sora',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+::selection{background:var(--cyan);color:#fff}
+
+/* ---------- nav ---------- */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 28px;background:rgba(12,20,23,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.07)}
+nav .brand{font-family:var(--mono);font-size:13px;letter-spacing:.08em;color:#e8eeec;text-decoration:none}
+nav .brand b{color:var(--cyan)}
+nav ul{display:flex;gap:6px;list-style:none}
+nav ul a{font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:#aebcba;text-decoration:none;padding:7px 11px;border-radius:6px;transition:color .2s,background .2s}
+nav ul a:hover,nav ul a:focus-visible{color:#fff;background:rgba(255,255,255,.08)}
+nav ul a.cta{color:var(--ink);background:var(--cyan);font-weight:500}
+nav ul a.cta:hover{background:#19c9ba;color:var(--ink)}
+@media(max-width:760px){nav ul li.hide-m{display:none}}
+
+/* ---------- hero (viewer panel) ---------- */
+header{position:relative;background:
+  radial-gradient(1200px 600px at 75% 20%,rgba(20,179,165,.10),transparent 60%),
+  linear-gradient(180deg,var(--ink) 0%,var(--ink-2) 100%);
+  color:#e9efee;overflow:hidden}
+header::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none}
+.hero-inner{position:relative;max-width:1120px;margin:0 auto;padding:140px 28px 96px;
+  display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+.hud{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:#7d8f8c;text-transform:uppercase}
+.hud .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cyan);margin-right:8px;
+  box-shadow:0 0 0 0 rgba(20,179,165,.5);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(20,179,165,.5)}70%{box-shadow:0 0 0 9px rgba(20,179,165,0)}100%{box-shadow:0 0 0 0 rgba(20,179,165,0)}}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(40px,6vw,68px);line-height:1.04;letter-spacing:-.02em;margin:18px 0 14px;color:#fff}
+h1 .accent{color:var(--cyan)}
+.tagline{font-size:clamp(16px,2vw,19px);color:#b9c6c4;max-width:46ch}
+.tagline strong{color:#e9efee;font-weight:600}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{font-family:var(--mono);font-size:13px;letter-spacing:.04em;text-decoration:none;padding:12px 20px;border-radius:8px;transition:transform .15s,background .2s,border-color .2s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--cyan);color:var(--ink);font-weight:500}
+.btn-primary:hover{background:#19c9ba}
+.btn-ghost{border:1px solid rgba(255,255,255,.22);color:#dfe8e6}
+.btn-ghost:hover{border-color:var(--cyan);color:#fff}
+.hero-meta{display:flex;gap:26px;margin-top:38px;flex-wrap:wrap}
+.hero-meta div{font-family:var(--mono);font-size:12px;color:#7d8f8c}
+.hero-meta b{display:block;font-family:var(--display);font-size:22px;color:#fff;font-weight:700;letter-spacing:0}
+
+/* scan figure */
+.scan{position:relative;aspect-ratio:1/1;max-width:430px;justify-self:end;width:100%;
+  border:1px solid rgba(255,255,255,.12);border-radius:14px;background:#070d10;
+  box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.scan svg{width:100%;height:100%;display:block}
+.scan .corner{position:absolute;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:#5f7572;padding:12px 14px;pointer-events:none}
+.scan .tl{top:0;left:0}.scan .tr{top:0;right:0;text-align:right}.scan .bl{bottom:0;left:0}.scan .br{bottom:0;right:0;text-align:right}
+.scan .corner em{color:var(--cyan);font-style:normal}
+.contour{fill:rgba(20,179,165,.16);stroke:var(--cyan);stroke-width:1.6;stroke-dasharray:6 5;animation:march 14s linear infinite}
+.contour2{fill:rgba(211,79,141,.12);stroke:var(--magenta);stroke-width:1.2;stroke-dasharray:4 4;animation:march 18s linear infinite reverse}
+@keyframes march{to{stroke-dashoffset:-300}}
+.scanline{stroke:rgba(20,179,165,.35);stroke-width:1;animation:sweep 6s ease-in-out infinite}
+@keyframes sweep{0%,100%{transform:translateY(-110px)}50%{transform:translateY(110px)}}
+@media(max-width:880px){
+  .hero-inner{grid-template-columns:1fr;padding-top:118px}
+  .scan{justify-self:center;max-width:360px}
+}
+
+/* ---------- sections ---------- */
+main{max-width:1120px;margin:0 auto;padding:0 28px}
+section{padding:84px 0 10px}
+.eyebrow{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.eyebrow::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--cyan)}
+section h2{font-family:var(--display);font-weight:700;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.015em;margin:10px 0 8px}
+.section-sub{color:var(--muted);max-width:62ch;margin-bottom:34px}
+
+/* about */
+.about-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:40px;margin-top:30px}
+.about-grid p{margin-bottom:16px;font-size:16.5px}
+.interests{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px}
+.interests h3{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.chips{display:flex;flex-wrap:wrap;gap:9px}
+.chip{font-family:var(--mono);font-size:12.5px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--paper);transition:border-color .2s,color .2s}
+.chip:hover{border-color:var(--cyan);color:var(--cyan)}
+@media(max-width:880px){.about-grid{grid-template-columns:1fr}}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:26px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:7px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+.sw.c{background:var(--cyan)}.sw.a{background:var(--amber)}.sw.m{background:var(--magenta)}
+
+/* publications */
+.pub-group{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:34px 0 14px}
+.pub{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:12px;
+  display:grid;grid-template-columns:1fr auto;gap:6px 18px;align-items:start;transition:transform .18s,box-shadow .18s,border-color .18s}
+.pub:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(12,20,23,.08)}
+.pub.published{border-left-color:var(--cyan)}
+.pub.accepted{border-left-color:var(--amber)}
+.pub.review{border-left-color:var(--magenta)}
+.pub h3{font-family:var(--display);font-size:16.5px;font-weight:600;line-height:1.42;letter-spacing:-.01em}
+.pub .authors{font-size:13.5px;color:var(--muted);margin-top:4px}
+.pub .authors b{color:var(--text);font-weight:600}
+.pub .venue{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:7px}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:5px 11px;border-radius:999px;white-space:nowrap;align-self:start}
+.tag.published{background:var(--cyan-soft);color:#0d8d82}
+.tag.accepted{background:var(--amber-soft);color:#a6731a}
+.tag.review{background:var(--magenta-soft);color:#b53b75}
+@media(max-width:680px){.pub{grid-template-columns:1fr}.tag{justify-self:start}}
+
+/* timeline (experience + education) */
+.timeline{position:relative;margin-top:28px;padding-left:26px}
+.timeline::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--line);border-radius:2px}
+.titem{position:relative;padding:0 0 38px}
+.titem::before{content:"";position:absolute;left:-26px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--paper);border:3px solid var(--cyan)}
+.titem .when{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.titem h3{font-family:var(--display);font-size:19px;font-weight:600;margin:5px 0 2px;letter-spacing:-.01em}
+.titem .org{font-size:14.5px;color:var(--muted);margin-bottom:10px}
+.titem .org a{color:var(--cyan);text-decoration:none}
+.titem ul{margin:8px 0 0 18px;color:#3b4a4e;font-size:15px}
+.titem li{margin-bottom:5px}
+.titem .skill-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.titem .skill-tags span{font-family:var(--mono);font-size:11.5px;padding:4px 10px;border-radius:6px;background:var(--cyan-soft);color:#0d8d82}
+
+/* skills */
+.skills-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+.skill-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px}
+.skill-card h3{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:15px;display:flex;align-items:center;gap:8px}
+.skill-card h3::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--cyan)}
+@media(max-width:820px){.skills-grid{grid-template-columns:1fr}}
+
+/* honors */
+.honors{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
+.honor{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;gap:16px;align-items:flex-start}
+.honor .yr{font-family:var(--mono);font-size:13px;color:var(--cyan);font-weight:500;min-width:48px}
+.honor p{font-size:15px}
+.honor b{font-weight:600}
+@media(max-width:760px){.honors{grid-template-columns:1fr}}
+
+/* languages strip */
+.langs{display:flex;flex-wrap:wrap;gap:14px;margin-top:26px}
+.lang{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 22px;font-size:15px}
+.lang b{font-family:var(--display);display:block;font-size:15px}
+.lang span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* contact / footer */
+footer{margin-top:90px;background:linear-gradient(180deg,var(--ink) 0%,var(--ink-2) 100%);color:#e9efee;position:relative;overflow:hidden}
+footer::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:44px 44px;pointer-events:none}
+.footer-inner{position:relative;max-width:1120px;margin:0 auto;padding:80px 28px 36px}
+.footer-inner h2{font-family:var(--display);font-size:clamp(28px,4vw,44px);font-weight:700;letter-spacing:-.02em;color:#fff;margin-bottom:14px}
+.footer-inner p{color:#aebcba;max-width:52ch;margin-bottom:30px}
+.contact-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:56px}
+.refs{border-top:1px solid rgba(255,255,255,.1);padding-top:34px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.ref{font-size:14px;color:#aebcba}
+.ref b{display:block;color:#e9efee;font-weight:600;font-family:var(--display);font-size:15px}
+.ref span{font-family:var(--mono);font-size:12px;color:#7d8f8c}
+.colophon{margin-top:50px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-family:var(--mono);font-size:11.5px;color:#5f7572}
+@media(max-width:760px){.refs{grid-template-columns:1fr}}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+</style>
 </head>
 <body>
-    <h1>Mahdi Zarrin</h1>
-    <p>AI Engineer | Computer Vision | Medical Imaging</p>
 
-    <h2>About Me</h2>
-    <p>I am working on deep learning for medical image segmentation...</p>
+<nav aria-label="Main navigation">
+  <a class="brand" href="#top">m.<b>zarrin</b> // research</a>
+  <ul>
+    <li class="hide-m"><a href="#about">About</a></li>
+    <li><a href="#publications">Publications</a></li>
+    <li class="hide-m"><a href="#experience">Experience</a></li>
+    <li class="hide-m"><a href="#education">Education</a></li>
+    <li><a class="cta" href="#contact">Contact</a></li>
+  </ul>
+</nav>
 
-    <h2>Skills</h2>
-    <ul>
-        <li>Python</li>
-        <li>Deep Learning</li>
-        <li>PyTorch / TensorFlow</li>
-    </ul>
+<header id="top">
+  <div class="hero-inner">
+    <div>
+      <div class="hud"><span class="dot"></span>AI Researcher · Computer Vision · Medical Imaging</div>
+      <h1>Mahdi <span class="accent">Zarrin</span></h1>
+      <p class="tagline">I build deep learning systems that <strong>segment, reconstruct, and translate medical images</strong> — from brain tumor delineation in MRI to cross-modality synthesis — so clinicians can see more with less.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#publications">View publications ↓</a>
+        <a class="btn btn-ghost" href="mailto:mahdizarrin1999@gmail.com">mahdizarrin1999@gmail.com</a>
+      </div>
+      <div class="hero-meta">
+        <div><b>10</b>papers &amp; preprints</div>
+        <div><b>2×</b>Computers in Biology &amp; Medicine</div>
+        <div><b>20/20</b>M.Sc. thesis grade</div>
+      </div>
+    </div>
+
+    <figure class="scan" aria-label="Stylized axial brain MRI with animated tumor segmentation contour">
+      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+        <defs>
+          <radialGradient id="brainfill" cx="50%" cy="46%" r="60%">
+            <stop offset="0%" stop-color="#2a3a3f"/>
+            <stop offset="55%" stop-color="#1c2a2e"/>
+            <stop offset="100%" stop-color="#0e181b"/>
+          </radialGradient>
+        </defs>
+        <!-- crosshair -->
+        <line x1="200" y1="14" x2="200" y2="46" stroke="#33514d" stroke-width="1"/>
+        <line x1="200" y1="354" x2="200" y2="386" stroke="#33514d" stroke-width="1"/>
+        <line x1="14" y1="200" x2="46" y2="200" stroke="#33514d" stroke-width="1"/>
+        <line x1="354" y1="200" x2="386" y2="200" stroke="#33514d" stroke-width="1"/>
+        <!-- skull outline -->
+        <ellipse cx="200" cy="202" rx="138" ry="158" fill="none" stroke="#3a4d50" stroke-width="2.5"/>
+        <!-- brain -->
+        <path fill="url(#brainfill)" stroke="#46605f" stroke-width="1.5" d="M200 64c-46 0-86 22-104 58-12 24-16 52-12 80 4 30 14 58 34 78 22 22 52 34 82 34s60-12 82-34c20-20 30-48 34-78 4-28 0-56-12-80-18-36-58-58-104-58z"/>
+        <!-- midline -->
+        <path d="M200 70 L200 332" stroke="#11181b" stroke-width="6" stroke-linecap="round"/>
+        <!-- sulci (left) -->
+        <g stroke="#101a1d" stroke-width="4" fill="none" stroke-linecap="round" opacity=".85">
+          <path d="M120 130 q28 -16 56 -6"/>
+          <path d="M100 175 q34 -12 64 2"/>
+          <path d="M96 222 q30 14 60 8"/>
+          <path d="M112 270 q26 20 54 14"/>
+          <path d="M146 308 q20 8 40 4"/>
+        </g>
+        <!-- sulci (right) -->
+        <g stroke="#101a1d" stroke-width="4" fill="none" stroke-linecap="round" opacity=".85">
+          <path d="M280 130 q-28 -16 -56 -6"/>
+          <path d="M300 175 q-34 -12 -64 2"/>
+          <path d="M304 222 q-30 14 -60 8"/>
+          <path d="M288 270 q-26 20 -54 14"/>
+        </g>
+        <!-- ventricles -->
+        <path d="M186 168 q-12 24 -4 52 q8 14 14 4 q-6 -28 0 -52 q-4 -12 -10 -4z" fill="#0a1215"/>
+        <path d="M214 168 q12 24 4 52 q-8 14 -14 4 q6 -28 0 -52 q4 -12 10 -4z" fill="#0a1215"/>
+        <!-- tumor: edema (outer, magenta) + enhancing core (cyan) -->
+        <path class="contour2" d="M252 218 q34 -8 44 18 q10 26 -8 44 q-20 18 -44 8 q-22 -10 -20 -34 q2 -28 28 -36z"/>
+        <path class="contour" d="M262 234 q22 -4 28 14 q6 18 -7 28 q-14 11 -28 3 q-13 -8 -11 -23 q2 -17 18 -22z"/>
+        <!-- sweep line -->
+        <g style="transform-origin:center">
+          <line class="scanline" x1="40" y1="200" x2="360" y2="200"/>
+        </g>
+      </svg>
+      <figcaption class="corner tl">PT: ZARRIN^MAHDI<br>SEQ: T1-CE · AXIAL</figcaption>
+      <div class="corner tr">SLICE <em>77</em>/155<br>1.0 × 1.0 × 1.0 mm</div>
+      <div class="corner bl"><em>■</em> ENHANCING — DICE 0.91<br><span style="color:#d34f8d">■</span> EDEMA — DICE 0.88</div>
+      <div class="corner br">W:400 L:40<br>MODEL: GBI-MAMBA</div>
+    </figure>
+  </div>
+</header>
+
+<main>
+
+  <!-- ABOUT -->
+  <section id="about" class="reveal">
+    <div class="eyebrow">About</div>
+    <h2>Making medical images speak clearly</h2>
+    <div class="about-grid">
+      <div>
+        <p>I'm an AI researcher with an M.Sc. in Artificial Intelligence &amp; Robotics from the University of Tabriz, where my thesis on hybrid deep learning for brain tumor segmentation in MRI earned a perfect 20/20 under the supervision of Prof. Jafar Tanha.</p>
+        <p>My work sits at the intersection of computer vision and clinical need: weakly- and semi-supervised segmentation that learns from scarce annotations, Mamba–CNN hybrid architectures, knowledge distillation that respects anatomy's topology and geometry, and self-supervised synthesis of MRI from CT to bridge the modality gap.</p>
+        <p>I've published in <em>Computers in Biology and Medicine</em> and serve as a reviewer for the <em>International Journal of Imaging Systems and Technology</em>. I'm currently seeking PhD opportunities and research collaborations in medical image analysis.</p>
+      </div>
+      <aside class="interests">
+        <h3>Research interests</h3>
+        <div class="chips">
+          <span class="chip">Computer Vision</span>
+          <span class="chip">Medical Image Analysis</span>
+          <span class="chip">Multi-modal Learning</span>
+          <span class="chip">Explainable AI</span>
+          <span class="chip">Neuroscience</span>
+          <span class="chip">Cognitive Science</span>
+          <span class="chip">Semi-supervised Learning</span>
+          <span class="chip">State-Space Models</span>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- PUBLICATIONS -->
+  <section id="publications" class="reveal">
+    <div class="eyebrow">Publications</div>
+    <h2>Selected research output</h2>
+    <p class="section-sub">Each entry is color-coded by status — the same way a segmentation mask labels its classes.</p>
+    <div class="legend">
+      <span><i class="sw c"></i> Published</span>
+      <span><i class="sw a"></i> Accepted</span>
+      <span><i class="sw m"></i> Under review / in preparation</span>
+    </div>
+
+    <div class="pub-group">Journal papers</div>
+
+    <article class="pub published">
+      <div>
+        <h3>A Novel Consistency-guided and Pseudo-labeled Training for Weakly-Semi-Supervised Medical Image Segmentation</h3>
+        <p class="authors"><b>Zarrin, M.</b>, Tanha, J., Kazempour, A., Nikkhah, H. &amp; Roshan, S.</p>
+        <p class="venue">Computers in Biology and Medicine · 2026</p>
+      </div>
+      <span class="tag published">Published</span>
+    </article>
+
+    <article class="pub published">
+      <div>
+        <h3>A Deep Ensemble Medical Image Segmentation with Novel Sampling Method and Loss Function</h3>
+        <p class="authors">Roshan, S., Tanha, J., <b>Zarrin, M.</b>, Fakhim Babaei, A., Nikkhah, H. &amp; Jafari, Z.</p>
+        <p class="venue">Computers in Biology and Medicine · 2024</p>
+      </div>
+      <span class="tag published">Published</span>
+    </article>
+
+    <article class="pub published">
+      <div>
+        <h3>A Novel Hybrid Deep Learning Model with Receptive Field-Enhanced Skip Connections and Adaptive Loss for Medical Image Segmentation</h3>
+        <p class="authors"><b>Zarrin, M.</b> &amp; Nikkhah, H.</p>
+        <p class="venue">Journal of AI and Data Mining · 2026</p>
+      </div>
+      <span class="tag published">Published</span>
+    </article>
+
+    <article class="pub accepted">
+      <div>
+        <h3>A Novel Hybrid CNN-Mamba Framework with DySample-Enhanced YOLOv11 for Automated Pediatric Wrist Fracture Detection</h3>
+        <p class="authors"><b>Zarrin, M.</b>, Tanha, J. &amp; Nikkhah, H.</p>
+        <p class="venue">Journal of Artificial Intelligence, Applications and Innovations · 2026</p>
+      </div>
+      <span class="tag accepted">Accepted</span>
+    </article>
+
+    <div class="pub-group">Conference papers</div>
+
+    <article class="pub published">
+      <div>
+        <h3>MC-BioCLIPSR: A Mamba-CNN Hybrid Network with BioMedCLIP-Guided Loss for High-Resolution Brain MRI Reconstruction</h3>
+        <p class="authors">Kazempour, A., Tanha, J., Roshan, S., <b>Zarrin, M.</b> &amp; Nikkhah, H.</p>
+        <p class="venue">Int. Conference on Computer and Knowledge Engineering (ICCKE) · 2025</p>
+      </div>
+      <span class="tag published">Published</span>
+    </article>
+
+    <article class="pub accepted">
+      <div>
+        <h3>YM-WML: A New YOLO-based Segmentation Model with Weighted Multi-class Loss for Medical Imaging</h3>
+        <p class="authors">Nikkhah, H., Tanha, J., <b>Zarrin, M.</b>, Rhoshan, S. &amp; Kazempour, A.</p>
+        <p class="venue">7th Int. Conference on Pattern Recognition and Image Analysis (IPRIA) · 2025</p>
+      </div>
+      <span class="tag accepted">Accepted</span>
+    </article>
+
+    <div class="pub-group">Under review &amp; in preparation</div>
+
+    <article class="pub review">
+      <div>
+        <h3>Synthesizing MRI from CT Using Hierarchical Fusion of Self-Supervised Vision Priors and State-Space Models</h3>
+        <p class="authors"><b>Zarrin, M.</b>, Tanha, J., Kazempour, A. &amp; Nikkhah, H.</p>
+        <p class="venue">Under review · Journal of Biomedical Physics and Engineering</p>
+      </div>
+      <span class="tag review">Under review</span>
+    </article>
+
+    <article class="pub review">
+      <div>
+        <h3>Topology- and Geometry-Aware Knowledge Distillation for Medical Image Segmentation</h3>
+        <p class="authors"><b>Zarrin, M.</b>, Klén, R., Roshan, S., Nikkhah, H. &amp; Kazempour, A.</p>
+        <p class="venue">In preparation</p>
+      </div>
+      <span class="tag review">In preparation</span>
+    </article>
+
+    <article class="pub review">
+      <div>
+        <h3>Bridging the Modality Gap: Self-Supervised Generation of sMRI from CT for Enhanced Segmentation</h3>
+        <p class="authors"><b>Zarrin, M.</b>, Tanha, J., Nikkhah, H. &amp; Kazempour, A.</p>
+        <p class="venue">In preparation</p>
+      </div>
+      <span class="tag review">In preparation</span>
+    </article>
+
+    <article class="pub review">
+      <div>
+        <h3>GBI-Mamba: A Mamba-Based Hybrid Model for Brain Tumor Segmentation in MRI Images</h3>
+        <p class="authors"><b>Zarrin, M.</b> &amp; Tanha, J.</p>
+        <p class="venue">In preparation</p>
+      </div>
+      <span class="tag review">In preparation</span>
+    </article>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience" class="reveal">
+    <div class="eyebrow">Experience</div>
+    <h2>Research &amp; industry</h2>
+    <div class="timeline">
+      <div class="titem">
+        <span class="when">2023 — 2025 · Tabriz, Iran</span>
+        <h3>Research Assistant — Ashna Lab (AI Laboratory)</h3>
+        <p class="org">University of Tabriz · Supervisor: Prof. Jafar Tanha</p>
+        <ul>
+          <li>Medical image analysis for disease diagnosis across MRI and CT modalities</li>
+          <li>Developed a deep learning framework for EEG signal analysis</li>
+          <li>Object detection and scene understanding on ADE20K and COCO benchmarks</li>
+          <li>Built an AI + VR automatic decoration system for interior design</li>
+        </ul>
+        <div class="skill-tags">
+          <span>Segmentation</span><span>Object Detection</span><span>Signal Processing</span><span>Time Series</span><span>Text Analysis</span>
+        </div>
+      </div>
+
+      <div class="titem">
+        <span class="when">2023 — 2025 · Tabriz, Iran · Part-time</span>
+        <h3>Computer Vision Engineer — Husan</h3>
+        <p class="org"><a href="https://husan.ir" target="_blank" rel="noopener">husan.ir</a></p>
+        <ul>
+          <li>Built a specialized dataset for precise object identification and segmentation</li>
+          <li>Applied advanced image processing techniques for high-quality data collection</li>
+          <li>Designed and shipped a robust deep learning model for detection and segmentation</li>
+        </ul>
+      </div>
+
+      <div class="titem">
+        <span class="when">Feb 2023 — Nov 2023 · Tehran, Iran · Remote</span>
+        <h3>ML &amp; Computer Vision Researcher — Kian Tejarat</h3>
+        <p class="org"><a href="https://kiantc.com" target="_blank" rel="noopener">kiantc.com</a></p>
+        <ul>
+          <li>Led a deep learning–based facial authentication project</li>
+          <li>Developed robust algorithms for accurate identity verification in security applications</li>
+        </ul>
+      </div>
+
+      <div class="titem">
+        <span class="when">Feb 2025 — present</span>
+        <h3>Journal Reviewer</h3>
+        <p class="org">International Journal of Imaging Systems and Technology (IMA)</p>
+      </div>
+
+      <div class="titem">
+        <span class="when">Winter 2019 &amp; 2020 · Ardabil, Iran</span>
+        <h3>Teaching Assistant — University of Mohaghegh Ardabili</h3>
+        <p class="org">C and C++ programming for Statistics and Computer Science courses</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section id="education" class="reveal">
+    <div class="eyebrow">Education</div>
+    <h2>Academic background</h2>
+    <div class="timeline">
+      <div class="titem">
+        <span class="when">Sep 2022 — Feb 2025 · Tabriz, Iran</span>
+        <h3>M.Sc. in Artificial Intelligence &amp; Robotics</h3>
+        <p class="org">University of Tabriz · GPA 17.98/20 (3.73/4)</p>
+        <ul>
+          <li><b>Thesis (20/20):</b> Segmentation of MRI Images for Brain Tumor Diagnosis Using Hybrid Deep Learning Methods — supervised by Prof. Jafar Tanha</li>
+        </ul>
+      </div>
+      <div class="titem">
+        <span class="when">Sep 2017 — Feb 2022 · Ardabil, Iran</span>
+        <h3>B.S. in Computer Science</h3>
+        <p class="org">University of Mohaghegh Ardabili</p>
+      </div>
+    </div>
+
+    <div class="honors">
+      <div class="honor">
+        <span class="yr">2025</span>
+        <p>Ranked <b>2nd among 20</b> Artificial Intelligence &amp; Robotics students at the University of Tabriz</p>
+      </div>
+      <div class="honor">
+        <span class="yr">2022</span>
+        <p>Ranked within the <b>top 3% of ~14,000 participants</b> in the National University Entrance Exam</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills" class="reveal">
+    <div class="eyebrow">Toolbox</div>
+    <h2>Skills &amp; languages</h2>
+    <div class="skills-grid">
+      <div class="skill-card">
+        <h3>Programming</h3>
+        <div class="chips">
+          <span class="chip">Python</span><span class="chip">C / C++</span><span class="chip">MATLAB</span><span class="chip">LaTeX</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <h3>Frameworks &amp; libraries</h3>
+        <div class="chips">
+          <span class="chip">PyTorch (2D/3D)</span><span class="chip">TensorFlow</span><span class="chip">MONAI</span><span class="chip">nnU-Net</span><span class="chip">OpenCV</span><span class="chip">SimpleITK</span><span class="chip">scikit-image</span><span class="chip">NumPy · Pandas · Matplotlib</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <h3>Tools</h3>
+        <div class="chips">
+          <span class="chip">Linux</span><span class="chip">Git</span>
+        </div>
+      </div>
+    </div>
+    <div class="langs">
+      <div class="lang"><b>Persian</b><span>Native</span></div>
+      <div class="lang"><b>Turkish</b><span>Native</span></div>
+      <div class="lang"><b>English</b><span>IELTS Academic 6.5</span></div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="contact">
+  <div class="footer-inner">
+    <h2>Let's collaborate.</h2>
+    <p>Open to PhD positions, research collaborations, and projects in medical image analysis, multi-modal learning, and computer vision.</p>
+    <div class="contact-row">
+      <a class="btn btn-primary" href="mailto:mahdizarrin1999@gmail.com">Email me</a>
+      <a class="btn btn-ghost" href="https://www.linkedin.com/in/mahdi-zarrin" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="btn btn-ghost" href="https://scholar.google.com/citations?user=YOUR_ID" target="_blank" rel="noopener">Google Scholar</a>
+      <a class="btn btn-ghost" href="https://github.com/MahdiDasZarrin" target="_blank" rel="noopener">GitHub</a>
+    </div>
+
+    <div class="refs">
+      <div class="ref"><b>Jafar Tanha</b>Professor, Computer Engineering, University of Tabriz, Iran<br><span>tanha@tabrizu.ac.ir</span></div>
+      <div class="ref"><b>Riku Klén</b>Associate Professor, Turku PET Centre, University of Turku, Finland<br><span>riku.klen@utu.fi</span></div>
+      <div class="ref"><b>Mohammad Ali Balafar</b>Professor, Computer Engineering, University of Tabriz, Iran<br><span>balafarali@tabrizu.ac.ir</span></div>
+      <div class="ref"><b>Sajad Rezaei</b>Research Associate, Central Institute of Mental Health, Mannheim, Germany<br><span>sajadrezaei@ieee.org</span></div>
+    </div>
+
+    <div class="colophon">
+      <span>© 2026 Mahdi Zarrin</span>
+      <span>SEQ: PORTFOLIO · SLICE 1/1</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // scroll reveal, respects reduced motion
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  } else {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+  }
+</script>
 
 </body>
 </html>
